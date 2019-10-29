@@ -2,7 +2,9 @@ const express = require('express')
 const mongoose = require('mongoose')
 const mongoosePaginate = require('mongoose-paginate-v2')
 const app = express()
-app.use(require('body-parser').json());
+const cors = require('cors')
+app.use(require('body-parser').json())
+app.use(cors())
 
 mongoose.connect('mongodb://localhost/notes', {useNewUrlParser: true})
 const db = mongoose.connection
@@ -28,19 +30,25 @@ db.once('open', async () => {
   console.log('Connection to mongodb sucessfull')
 })
 
-app.get('/categories', async (req, res) => {
+app.get('/categories', async (req, res, next) => {
   try {
-    const categories = await mongoose.model('Category').paginate({}, {limit: 10})
+    const options = {
+      limit: 5
+    }
+    if(req.query.page) {
+      options.page = Number(req.query.page)
+    }
+    const categories = await mongoose.model('Category').paginate({}, options)
 
     return res.status(200).json({
-      categories
+      ...categories
     })
   } catch(error) {
     return next(error)
   }
 })
 
-app.post('/categories', async (req, res) => {
+app.post('/categories', async (req, res, next) => {
   try {
     const category = new mongoose.model('Category')({
       ...req.body
@@ -55,7 +63,7 @@ app.post('/categories', async (req, res) => {
   }
 })
 
-app.put('/categories/:id', async (req, res) => {
+app.put('/categories/:id', async (req, res, next) => {
   try {
     const category = await mongoose.model('Category').findOneAndUpdate({_id: req.params.id}, body, {new: true})
   
@@ -73,33 +81,44 @@ app.put('/categories/:id', async (req, res) => {
   }
 })
 
-app.delete('/categories/:id', async (req, res) => {
+app.delete('/categories/:id', async (req, res, next) => {
   try {
     const category = await mongoose.model('Category').remove({_id: req.params.id})
 
     return res.status(200).json({
-      message: 'category deleted'
+      _id: req.params.id
     })
   } catch(error) {
     return next(error)
   }
 })
 
-app.get('/notes', async (req, res) => {
+app.get('/notes', async (req, res, next) => {
   try {
-    const notes = await mongoose.model('Notes').paginate({}, {limit: 10})
+    const searchQuery = {}
+    if(req.query.category) {
+      searchQuery.category = req.query.category
+    }
+    const options = {
+      limit: 5
+    }
+    if(req.query.page) {
+      options.page = Number(req.query.page)
+    }
+
+    const notes = await mongoose.model('Note').paginate(searchQuery, options)
 
     return res.status(200).json({
-      notes
+      ...notes
     })
   } catch(error) {
     return next(error)
   }
 })
 
-app.post('/notes', async (req, res) => {
+app.post('/notes', async (req, res, next) => {
   try {
-    const note = new mongoose.model('Notes')({
+    const note = new mongoose.model('Note')({
       ...req.body
     })
     await note.save()
@@ -112,9 +131,9 @@ app.post('/notes', async (req, res) => {
   }
 })
 
-app.put('/notes/:id', async (req, res) => {
+app.put('/notes/:id', async (req, res, next) => {
   try {
-    const note = await mongoose.model('Notes').findOneAndUpdate({_id: req.params.id}, body, {new: true})
+    const note = await mongoose.model('Note').findOneAndUpdate({_id: req.params.id}, body, {new: true})
   
     if(!note) {
       return res.status(400).json({
@@ -130,12 +149,12 @@ app.put('/notes/:id', async (req, res) => {
   }
 })
 
-app.delete('/notes/:id', async (req, res) => {
+app.delete('/notes/:id', async (req, res, next) => {
   try {
     const note = await mongoose.model('Note').remove({_id: req.params.id})
 
     return res.status(200).json({
-      message: 'note deleted'
+      _id: req.params._id
     })
   } catch(error) {
     return next(error)
