@@ -1,11 +1,8 @@
 var coap        = require('coap')
   , server      = coap.createServer()
 
-const json = {data: []}
+const json = {data: 'hallo'}
 
-for(let i = 0; i < 10000; ++i) {
-  json.data.push({})
-}
 
 server.on('request', function(req, res) {
   res.end(JSON.stringify(json))
