@@ -7,21 +7,21 @@
       const coap = require('coap')
       const bl = require('bl')
 
-      coap
-    .request({
-      pathname: '/Matteo',
-      options: {
-      }
-    })
-    .on('response', function(res) {
+      const request = coap.request({
+        pathname: '/categories',
+        method: 'POST'
+      })
+
+      request.write(JSON.stringify({name: 'Beispiel 10'}))
+    
+      request.on('response', function(res) {
       console.log('response code', res.code)
 
       res.pipe(bl(function(err, data) {
         var json = JSON.parse(data)
         console.log(json)
       }))
-    })
-    .end()
+      }).end()
     </script>
   </head>
   <body>
