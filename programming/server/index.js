@@ -36,6 +36,12 @@ server.on('request', function(req, res) {
     if(req.method === 'POST') {
       return handlePostRequests(req, res)
     }
+    if(req.method === 'PUT') {
+      return handlePutRequest(req, res)
+    }
+    if(req.method === 'DELETE') {
+      return handleDeleteRequest(req, res)
+    }
       
     res.code = 404
     return res.end()
@@ -65,18 +71,74 @@ const handleGetRequests = async (req, res, path, query) => {
     }))
   }
 
+  if(path === '/notes') {
+    const searchQuery = {}
+    if(query && query.category) {
+      searchQuery.category = query.category
+    }
+    const options = {
+      limit: 5
+    }
+    if(query && query.page) {
+      options.page = Number(query.page)
+    }
+
+    const notes = await mongoose.model('Note').paginate(searchQuery, options)
+
+    return res.end(JSON.stringify({
+      ...notes
+    }))
+  }
+
   res.code = 404
   return res.end()
 }
 
 const handlePostRequests = async (req, res) => {
   if(req.url === '/categories') {
-      const category = new mongoose.model('Category')(JSON.parse(req.payload))
-      await category.save()
-    
-      console.log(category)
+    const category = new mongoose.model('Category')(JSON.parse(req.payload))
+    await category.save()
 
-      return res.end(JSON.stringify(category))
+    return res.end(JSON.stringify(category))
+  }
+
+  if(req.url === '/notes') {
+    const note = new mongoose.model('Category')(JSON.parse(req.payload))
+    await note.save()
+
+    return res.end(JSON.stringify(note))
+  }
+
+  res.code = 404
+  return res.end()
+}
+
+const handlePutRequest = async (req, res) => {
+  const url = req.url.split('/') 
+  if(url[1] === 'categories') {
+    const category = await mongoose.model('Category').findOneAndUpdate({_id: url[2]}, JSON.parse(req.payload), {new: true})
+  
+    if(!category) {
+      res.code = 404
+      return res.end()
+    }
+    console.log(category)
+  
+    return res.end(JSON.stringify(category))
+  }
+
+  res.code = 404
+  return res.end()
+}
+
+const handleDeleteRequest = async (req, res) => {
+  const url = req.url.split('/') 
+  if(url[1] === 'categories') {
+    const category = await mongoose.model('Category').remove({_id: url[2]})
+
+    return res.end(JSON.stringify({
+      _id: url[2]
+    }))
   }
 
   res.code = 404
