@@ -8,9 +8,14 @@
       const bl = require('bl')
 
       const request = coap.request({
-        pathname: '/notes?category=5da88f3d12c5e22e3c5489ec',
-        method: 'GET'
+        pathname: '/notes/',
+        method: 'PUT'
       })
+
+      request.write(JSON.stringify({
+        title: 'Beispiel7',
+        text: 'hmm',
+      }))
 
       request.on('response', function(res) {
       console.log('response code', res.code)

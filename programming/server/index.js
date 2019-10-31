@@ -103,7 +103,7 @@ const handlePostRequests = async (req, res) => {
   }
 
   if(req.url === '/notes') {
-    const note = new mongoose.model('Category')(JSON.parse(req.payload))
+    const note = new mongoose.model('Note')(JSON.parse(req.payload))
     await note.save()
 
     return res.end(JSON.stringify(note))
@@ -122,9 +122,19 @@ const handlePutRequest = async (req, res) => {
       res.code = 404
       return res.end()
     }
-    console.log(category)
   
     return res.end(JSON.stringify(category))
+  }
+
+  if(url[1] === 'notes') {
+    const note = await mongoose.model('Note').findOneAndUpdate({_id: url[2]}, JSON.parse(req.payload), {new: true})
+  
+    if(!note) {
+      res.code = 404
+      return res.end()
+    }
+  
+    return res.end(JSON.stringify(note))
   }
 
   res.code = 404
