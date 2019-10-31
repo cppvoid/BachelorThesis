@@ -119,7 +119,7 @@ const handlePutRequest = async (req, res) => {
     const category = await mongoose.model('Category').findOneAndUpdate({_id: url[2]}, JSON.parse(req.payload), {new: true})
   
     if(!category) {
-      res.code = 404
+      res.code = 400
       return res.end()
     }
   
@@ -130,7 +130,7 @@ const handlePutRequest = async (req, res) => {
     const note = await mongoose.model('Note').findOneAndUpdate({_id: url[2]}, JSON.parse(req.payload), {new: true})
   
     if(!note) {
-      res.code = 404
+      res.code = 400
       return res.end()
     }
   
@@ -145,6 +145,24 @@ const handleDeleteRequest = async (req, res) => {
   const url = req.url.split('/') 
   if(url[1] === 'categories') {
     const category = await mongoose.model('Category').remove({_id: url[2]})
+
+    if(!category) {
+      res.code = 400
+      return res.end()
+    }
+
+    return res.end(JSON.stringify({
+      _id: url[2]
+    }))
+  }
+
+  if(url[1] === 'notes') {
+    const note = await mongoose.model('Note').remove({_id: url[2]})
+
+    if(!note) {
+      res.code = 400
+      return res.end()
+    }
 
     return res.end(JSON.stringify({
       _id: url[2]
