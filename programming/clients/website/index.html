@@ -7,24 +7,31 @@
       const coap = require('coap')
       const bl = require('bl')
 
-      const request = coap.request({
-        pathname: '/notes/5db9dbb568aef980feeadfca',
-        method: 'DELETE'
-      })
+      const run = async (id, body) => {
+        const request = coap.request({
+          pathname: `/notes/${id}`,
+          method: 'DELETE'
+        })
 
-      request.write(JSON.stringify({
-        title: 'Beispiel7',
-        text: 'hmm',
-      }))
+        //request.write(JSON.stringify(body))
 
-      request.on('response', function(res) {
-      console.log('response code', res.code)
-
-      res.pipe(bl(function(err, data) {
-        var json = JSON.parse(data)
-        console.log(json)
-      }))
-      }).end()
+        return new Promise((resolve, reject) => {
+          request.on('response', res => {
+            console.log('response code', res.code)
+            res.pipe(bl((error, data) => {
+              if(error) {
+                return reject(err)
+              } 
+              return resolve(JSON.parse(data))
+            }))
+          }).end()
+        })
+      }
+      (async () => {
+        const data = await run('5db9db7668aef980feeadfc9')
+        console.log(data)
+      })()
+      
     </script>
   </head>
   <body>
