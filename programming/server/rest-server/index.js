@@ -12,13 +12,25 @@ const db = mongoose.connection
 db.on('error', console.error.bind(console, 'connection error:'))
 db.once('open', async () => {
   const Note = new mongoose.Schema({
-    title: String,
-    text: String,
-    category: mongoose.Schema.Types.ObjectId
+    title: {
+      type: String,
+      required: true
+    },
+    text: {
+      type: String,
+      required: true
+    }, 
+    category: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true
+    } 
   })
   
   const Category = new mongoose.Schema({
-    name: String
+    name: {
+      type: String,
+      required: true
+    }
   })
 
   Category.plugin(mongoosePaginate)
@@ -32,17 +44,25 @@ db.once('open', async () => {
 
 app.get('/categories', async (req, res, next) => {
   try {
-    const options = {
-      limit: 5
-    }
-    if(req.query.page) {
-      options.page = Number(req.query.page)
-    }
-    const categories = await mongoose.model('Category').paginate({}, options)
+    if(req.query.limit) {
+      options = {}
+      if(req.query.page) {
+        options.page = Number(req.query.page)
+      }
+      options.limit = Number(req.query.limit)
 
-    return res.status(200).json({
-      ...categories
-    })
+      const categories = await mongoose.model('Category').paginate({}, options)
+
+      return res.status(200).json({
+        ...categories
+      })
+    } else {
+      const categories = await mongoose.model('Category').find({})
+
+      return res.status(200).json({
+        docs: categories
+      })
+    }
   } catch(error) {
     return next(error)
   }
@@ -65,7 +85,7 @@ app.post('/categories', async (req, res, next) => {
 
 app.put('/categories/:id', async (req, res, next) => {
   try {
-    const category = await mongoose.model('Category').findOneAndUpdate({_id: req.params.id}, body, {new: true})
+    const category = await mongoose.model('Category').findOneAndUpdate({_id: req.params.id}, req.body, {new: true})
   
     if(!category) {
       return res.status(400).json({
@@ -95,22 +115,25 @@ app.delete('/categories/:id', async (req, res, next) => {
 
 app.get('/notes', async (req, res, next) => {
   try {
-    const searchQuery = {}
-    if(req.query.category) {
-      searchQuery.category = req.query.category
-    }
-    const options = {
-      limit: 5
-    }
-    if(req.query.page) {
-      options.page = Number(req.query.page)
-    }
+    if(req.query.limit) {
+      options = {}
+      if(req.query.page) {
+        options.page = Number(req.query.page)
+      }
+      options.limit = Number(req.query.limit)
 
-    const notes = await mongoose.model('Note').paginate(searchQuery, options)
+      const notes = await mongoose.model('Note').paginate(searchQuery, options)
 
-    return res.status(200).json({
-      ...notes
-    })
+      return res.status(200).json({
+        docs: notes
+      })
+    } else {
+      const notes = await mongoose.model('Note').find({})
+
+      return res.status(200).json({
+
+      })
+    }
   } catch(error) {
     return next(error)
   }
@@ -156,6 +179,17 @@ app.delete('/notes/:id', async (req, res, next) => {
     return res.status(200).json({
       _id: req.params._id
     })
+  } catch(error) {
+    return next(error)
+  }
+})
+
+app.post('/reset', async (req, res) => {
+  try {
+    await mongoose.model('Note').remove({})
+    await mongoose.model('Category').remove({})
+    
+    return res.status(200).json({message: 'done'})
   } catch(error) {
     return next(error)
   }

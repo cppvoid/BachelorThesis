@@ -4,40 +4,93 @@
     <meta charset="UTF-8">
     <title>Electron Hello World!</title>
     <script>
-      const coap = require('coap')
-      const bl = require('bl')
+      const api = require('./api/http').default
 
-      const run = async (id, body) => {
-        const request = coap.request({
-          pathname: `/notes/${id}`,
-          method: 'DELETE'
-        })
+      const runMeasure = async (results, name, func, resetdb) => {
+        results[name] = {}
+        results[name].measures = []
+        
+        for(let i = 0; i < 10; ++i) {
+          if(resetdb) {
+            await api.reset()
+          }
+          const measure = {}
+          measure.start = new Date().getTime()
+          await func(i)
+          measure.end = new Date().getTime()
+          measure.result = measure.end - measure.start
+          results[name].measures.push(measure)
+        }
 
-        //request.write(JSON.stringify(body))
-
-        return new Promise((resolve, reject) => {
-          request.on('response', res => {
-            console.log('response code', res.code)
-            res.pipe(bl((error, data) => {
-              if(error) {
-                return reject(err)
-              } 
-              return resolve(JSON.parse(data))
-            }))
-          }).end()
-        })
+        results[name].result = results[name].measures.reduce((value, current) => {value += current.result; return value}, 0) 
+                               / 
+                               results[name].measures.length
       }
-      (async () => {
-        const data = await run('5db9db7668aef980feeadfc9')
-        console.log(data)
-      })()
-      
+
+      const run = async () => {
+        await api.reset()
+        const results = {}
+        
+        await runMeasure(results, 'createCategories', async (runNumber) => {
+          for(let i = 0; i < 1000; ++i) {
+            await api.postCategory({name: `Category${i}_${runNumber}`})
+          }
+        }, true)
+        
+        await runMeasure(results, 'iterateThroughtCategoriesLimit5', async (runNumber) => {
+          let result = await api.getCategories(5)
+          const {totalPages} = result 
+          for(let i = 1; i < totalPages; ++i) {
+            await api.getCategories(5, i)
+          }     
+        })
+
+        await runMeasure(results, 'iterateThroughtCategoriesLimit10', async (runNumber) => {
+          let result = await api.getCategories(5)
+          const {totalPages} = result 
+          for(let i = 1; i < totalPages; ++i) {
+            await api.getCategories(10, i)
+          }     
+        })
+
+        await runMeasure(results, 'iterateThroughtCategoriesLimit20', async (runNumber) => {
+          const result = await api.getCategories(5)
+          const {totalPages} = result 
+          for(let i = 1; i < totalPages; ++i) {
+            await api.getCategories(20, i)
+          }     
+        })
+        
+        await runMeasure(results, 'iterateThroughtCategoriesNoLimit', async (runNumber) => {
+          await api.getCategories()
+        })
+
+        const categoriesToUpdate = await api.getCategories()
+        const ids = categoriesToUpdate.docs.map(category => category._id)
+
+        await runMeasure(results, 'updateAllCategories', async (runNumber) => {
+          for(let i = 0; i < ids.length; ++i) {
+            await api.putCategory(ids[i], {name: `Category${i}_changed_${runNumber}`})
+          }
+        })
+
+        await runMeasure(results, 'createNotes', async (runNumber) => {
+          for(let i = 0; i < 1000; ++i) {
+            await api.postNote({name: `Category${i}_${runNumber}`})
+          }
+        }, true)
+        
+        await runMeasure(results, 'deleteAllCategories', async (runNumber) => {
+          for(let i = 0; i < ids.length; ++i) {
+            await api.deleteCategory(ids[i])
+          }
+        })
+        
+        console.log(results)
+      }
+      run()
     </script>
   </head>
   <body>
-    <h1>Electron Hello World!</h1>
-    We are using node <script>document.write(process.versions.node)</script>,
-    Chromium <script>document.write(process.versions.chrome)</script>,
-    and Electron <script>document.write(process.versions.electron)</script>.
   </body>
 </html>
