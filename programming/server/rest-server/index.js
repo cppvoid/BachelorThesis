@@ -125,13 +125,13 @@ app.get('/notes', async (req, res, next) => {
       const notes = await mongoose.model('Note').paginate(searchQuery, options)
 
       return res.status(200).json({
-        docs: notes
+        ...notes
       })
     } else {
       const notes = await mongoose.model('Note').find({})
 
       return res.status(200).json({
-
+        docs: notes
       })
     }
   } catch(error) {
@@ -156,7 +156,7 @@ app.post('/notes', async (req, res, next) => {
 
 app.put('/notes/:id', async (req, res, next) => {
   try {
-    const note = await mongoose.model('Note').findOneAndUpdate({_id: req.params.id}, body, {new: true})
+    const note = await mongoose.model('Note').findOneAndUpdate({_id: req.params.id}, req.body, {new: true})
   
     if(!note) {
       return res.status(400).json({
@@ -165,7 +165,7 @@ app.put('/notes/:id', async (req, res, next) => {
     }
   
     return res.status(200).json({
-      category
+      note
     })
   } catch(error) {
     return next(error)
