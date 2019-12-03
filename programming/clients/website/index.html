@@ -105,14 +105,21 @@
           for(let i = 0; i < ids.length; ++i) {
             await api.deleteNote(noteIds[i])
           }
+        }, () => {
+          for(let i = 0; i < 1000; ++i) {
+            await api.postNote({title: `Note${i}_9`, text: `Beispieltext`, category: ids[0]})
+          }
         })
 
         await runMeasure(results, 'deleteAllCategories', async (runNumber) => {
           for(let i = 0; i < ids.length; ++i) {
             await api.deleteCategory(ids[i])
           }
+        }, () => {
+          for(let i = 0; i < 1000; ++i) {
+            await api.postCategory({name: `Category${i}_9`})
+          }
         })
-      
         console.log(results)
       }
       run()
