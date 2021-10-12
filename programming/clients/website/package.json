@@ -11,7 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "coap": "^0.23.1",
-    "electron": "^7.0.0",
+    "electron": "^11.5.0",
     "request": "^2.88.0",
     "request-promise": "^4.2.5"
   }
